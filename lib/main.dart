@@ -63,23 +63,44 @@ class _MyHomePageState extends State<MyHomePage> {
 class MainContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    //final appState = Provider.of<AppState>(context);
+    final appState = Provider.of<AppState>(context);
 
     Future<void> fetchPost(String search) async {
-      //final String url = 'https://143a0284.ngrok.io/server.php';
       final String url =
-          'http://m23ee-mag2-demo.datasolution-aspac.site/graphql';
-      String payLoad = r'''
-                    {"query":"{products(search:\" $search \"){items{sku,name}}}"}
-      ''';
+          'https://2-3-2-3g456uy-7t6qpzagrbri4.us-4.magentosite.cloud/graphql';
+      String payLoad = '''
+                      {
+                        "query": 
+                        "{
+                          products(search:\\"$search\\") {
+                            items {
+                              sku,
+                              name,
+                              image{url},
+                              stock_status,
+                              price {
+                                regularPrice {amount {currency,value}}
+                              }
+                            }
+                          }
+                        }"
+                      } 
+                      ''';
 
-      print('>>>' + payLoad + '<<<');
+      payLoad = payLoad.replaceAll('\n', '').replaceAll(' ', '');
+      //print('>>>' + payLoad + '<<<');
       Map<String, String> requestHeaders = {'Content-type': 'application/json'};
       final response =
           await http.post(url, headers: requestHeaders, body: payLoad);
 
       if (response.statusCode == 200) {
-        print(response.body);
+        //print(response.body);
+        var productList = jsonDecode(response.body);
+
+        appState
+            .setProductDisplayList(productList['data']['products']['items']);
+
+        print(appState.getProductDisplayList);
       } else {
         // If that response was not OK, throw an error.
         //throw Exception('Failed to load post');
@@ -88,8 +109,6 @@ class MainContent extends StatelessWidget {
     }
 
     doSearch(String search) {
-      print('Search for ' + search);
-
       fetchPost(search);
     }
 
@@ -113,37 +132,46 @@ class MainContent extends StatelessWidget {
               border: InputBorder.none,
             ),
           ),
-          RaisedButton(
-            child: Text("Hit me"),
-            onPressed: () => doSearch('shirt'),
-          ),
+          Container(child: _productListView(context),),
         ],
       ),
     );
   }
 }
 
-class FAB extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
-    return FloatingActionButton(
-        child: Icon(Icons.add),
-        onPressed: () {
-          appState.setCounter(appState.getCounter + 1);
-        });
-  }
+Widget _productListView(BuildContext context) {
+  final appState = Provider.of<AppState>(context);
+
+  final List _productList = appState.getProductDisplayList;
+  return ListView.builder(
+    itemCount: _productList.length,
+    itemBuilder: (context, index) {
+      return ListTile(title: Text(_productList[index]['name']),);
+    },
+  );
 }
+
+// class FAB extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     final appState = Provider.of<AppState>(context);
+//     return FloatingActionButton(
+//         child: Icon(Icons.add),
+//         onPressed: () {
+//           appState.setCounter(appState.getCounter + 1);
+//         });
+//   }
+// }
 
 class AppState with ChangeNotifier {
   AppState();
 
-  int _counter = 0;
+  List _productDisplayList = [];
 
-  void setCounter(int counter) {
-    _counter = counter;
+  void setProductDisplayList(List list) {
+    _productDisplayList = list;
     notifyListeners();
   }
 
-  int get getCounter => _counter;
+  List get getProductDisplayList => _productDisplayList;
 }
