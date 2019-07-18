@@ -61,6 +61,7 @@ class _MyCartPageState extends State<MyCartPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
     
     return Scaffold(
       appBar: AppBar(
