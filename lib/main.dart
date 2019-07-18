@@ -49,7 +49,7 @@ class _MyHomePageState extends State<MyHomePage> {
         /* Color(0xfff37b1f), */
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.apps),
+            icon: Icon(Icons.shopping_cart),
             color: Colors.black,
             onPressed: () {},
           ),
@@ -88,7 +88,7 @@ class MainContent extends StatelessWidget {
                       ''';
 
       payLoad = payLoad.replaceAll('\n', '').replaceAll(' ', '');
-      //print('>>>' + payLoad + '<<<');
+      print('>>>' + payLoad + '<<<');
       Map<String, String> requestHeaders = {'Content-type': 'application/json'};
       final response =
           await http.post(url, headers: requestHeaders, body: payLoad);
@@ -100,7 +100,7 @@ class MainContent extends StatelessWidget {
         appState
             .setProductDisplayList(productList['data']['products']['items']);
 
-        print(appState.getProductDisplayList);
+        print(productList['data']['products']['items'].length);
       } else {
         // If that response was not OK, throw an error.
         //throw Exception('Failed to load post');
@@ -132,22 +132,72 @@ class MainContent extends StatelessWidget {
               border: InputBorder.none,
             ),
           ),
-          Container(child: _productListView(context),),
+          
+          Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              _productTile(context, 'Kratos Gym Pant',
+                  'https://2-3-2-3g456uy-7t6qpzagrbri4.us-4.magentosite.cloud/media/catalog/product/cache/2af9ad1f71bf4691ae09750f76d6350d/m/p/mp01-gray_main_1.jpg'),
+              _productTile(context, 'Caesar Warm-Up Pant',
+                  'https://2-3-2-3g456uy-7t6qpzagrbri4.us-4.magentosite.cloud/media/catalog/product/cache/2af9ad1f71bf4691ae09750f76d6350d/m/p/mp11-brown_main_1.jpg'),
+              _productTile(context, 'Aether Gym Pant',
+                  'https://2-3-2-3g456uy-7t6qpzagrbri4.us-4.magentosite.cloud/media/catalog/product/cache/2af9ad1f71bf4691ae09750f76d6350d/m/p/mp02-gray_main_2.jpg'),
+              _productTile(context, 'Livingston All-Purpose Tight',
+                  'https://2-3-2-3g456uy-7t6qpzagrbri4.us-4.magentosite.cloud/media/catalog/product/cache/2af9ad1f71bf4691ae09750f76d6350d/m/p/mp04-gray_main_1.jpg'),
+              _productTile(context, 'Thorpe Track Pant',
+                  'https://2-3-2-3g456uy-7t6qpzagrbri4.us-4.magentosite.cloud/media/catalog/product/cache/2af9ad1f71bf4691ae09750f76d6350d/m/p/mp05-blue_main_1.jpg'),
+            ],
+          )
         ],
       ),
     );
   }
 }
 
-Widget _productListView(BuildContext context) {
-  final appState = Provider.of<AppState>(context);
-
-  final List _productList = appState.getProductDisplayList;
-  return ListView.builder(
-    itemCount: _productList.length,
-    itemBuilder: (context, index) {
-      return ListTile(title: Text(_productList[index]['name']),);
-    },
+Widget _productTile(BuildContext context, String name, String imageURL) {
+  return Container(
+    padding: const EdgeInsets.all(10),
+    margin: const EdgeInsets.only(top: 10.0),
+    height: 460,
+    width: 400,
+    decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.all(Radius.circular(5.0))),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(5.0),
+      child: Column(
+        children: <Widget>[
+          Image(
+            height: 350,
+            fit: BoxFit.contain,
+            alignment: Alignment.topCenter,
+            image: NetworkImage(imageURL),
+          ),
+          Spacer(),
+          Text(
+            name,
+            style: TextStyle(fontSize: 20.0),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              IconButton(
+                icon: new Icon(Icons.star_border, color: Colors.red, size: 35,),
+                onPressed: () {
+                  print('favorite tapped!');
+                },
+              ),
+              IconButton(
+                icon: new Icon(Icons.add_shopping_cart, color: Colors.red, size: 35,),
+                onPressed: () {
+                  print('added to cart');
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
   );
 }
 

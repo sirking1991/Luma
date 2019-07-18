@@ -30,7 +30,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_launcher_icons:
-  graphql_flutter:
+  open_iconic_flutter:
 
 
 flutter_icons:
