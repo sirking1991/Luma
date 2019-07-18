@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:core';
+import 'package:Luma/appstate.dart';
+import 'package:Luma/productitem.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -55,7 +58,12 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-      body: MainContent(),
+      body: Container(
+        child: MainContent(),
+        padding: EdgeInsets.all(10),
+        color: Color(0xfff46e27),
+        alignment: Alignment(0.0, 0.0),
+      ),
     );
   }
 }
@@ -72,7 +80,7 @@ class MainContent extends StatelessWidget {
                       {
                         "query": 
                         "{
-                          products(search:\\"$search\\") {
+                          products(search:\\"[SEARCH_QUERY]\\") {
                             items {
                               sku,
                               name,
@@ -87,8 +95,8 @@ class MainContent extends StatelessWidget {
                       } 
                       ''';
 
-      payLoad = payLoad.replaceAll('\n', '').replaceAll(' ', '');
-      print('>>>' + payLoad + '<<<');
+      payLoad = payLoad.replaceAll('\n', '').replaceAll(' ', '').replaceAll('[SEARCH_QUERY]', search);
+      // print('>>>' + payLoad + '<<<');
       Map<String, String> requestHeaders = {'Content-type': 'application/json'};
       final response =
           await http.post(url, headers: requestHeaders, body: payLoad);
@@ -97,10 +105,23 @@ class MainContent extends StatelessWidget {
         //print(response.body);
         var productList = jsonDecode(response.body);
 
-        appState
-            .setProductDisplayList(productList['data']['products']['items']);
+        appState.clearProductList();
 
-        print(productList['data']['products']['items'].length);
+        if (productList['data']['products'] == null) {
+          print("No product found!");
+        } else {
+          for (var i = 0;
+              i < productList['data']['products']['items'].length;
+              i++) {
+            var productItem = productList['data']['products']['items'][i];
+            appState.addProductList(new ProductItem(
+                productItem['sku'],
+                productItem['name'],
+                productItem['image']['url'],
+                productItem['price']['regularPrice']['amount']['value']
+                    .toDouble()));
+          }
+        }
       } else {
         // If that response was not OK, throw an error.
         //throw Exception('Failed to load post');
@@ -108,53 +129,40 @@ class MainContent extends StatelessWidget {
       }
     }
 
-    doSearch(String search) {
-      fetchPost(search);
-    }
-
-    return Container(
-      padding: EdgeInsets.all(10),
-      color: Color(0xfff46e27),
-      alignment: Alignment(0.0, 0.0),
-      child: Column(
-        children: <Widget>[
-          TextField(
-            maxLines: 1,
-            maxLength: 50,
-            textInputAction: TextInputAction.search,
-            onSubmitted: (text) => doSearch(text),
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.white,
-              suffixIcon: Icon(Icons.search),
-              hintText: "Search products",
-              counterText: "",
-              border: InputBorder.none,
-            ),
+    return Column(
+      children: <Widget>[
+        TextField(
+          maxLines: 1,
+          maxLength: 50,
+          textInputAction: TextInputAction.search,
+          onSubmitted: (text) => fetchPost(text),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            suffixIcon: Icon(Icons.search),
+            hintText: "Search products",
+            counterText: "",
+            border: InputBorder.none,
           ),
-          
-          Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              _productTile(context, 'Kratos Gym Pant',
-                  'https://2-3-2-3g456uy-7t6qpzagrbri4.us-4.magentosite.cloud/media/catalog/product/cache/2af9ad1f71bf4691ae09750f76d6350d/m/p/mp01-gray_main_1.jpg'),
-              _productTile(context, 'Caesar Warm-Up Pant',
-                  'https://2-3-2-3g456uy-7t6qpzagrbri4.us-4.magentosite.cloud/media/catalog/product/cache/2af9ad1f71bf4691ae09750f76d6350d/m/p/mp11-brown_main_1.jpg'),
-              _productTile(context, 'Aether Gym Pant',
-                  'https://2-3-2-3g456uy-7t6qpzagrbri4.us-4.magentosite.cloud/media/catalog/product/cache/2af9ad1f71bf4691ae09750f76d6350d/m/p/mp02-gray_main_2.jpg'),
-              _productTile(context, 'Livingston All-Purpose Tight',
-                  'https://2-3-2-3g456uy-7t6qpzagrbri4.us-4.magentosite.cloud/media/catalog/product/cache/2af9ad1f71bf4691ae09750f76d6350d/m/p/mp04-gray_main_1.jpg'),
-              _productTile(context, 'Thorpe Track Pant',
-                  'https://2-3-2-3g456uy-7t6qpzagrbri4.us-4.magentosite.cloud/media/catalog/product/cache/2af9ad1f71bf4691ae09750f76d6350d/m/p/mp05-blue_main_1.jpg'),
-            ],
-          )
-        ],
-      ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            itemBuilder: (BuildContext context, int index) {
+              ProductItem productItem = appState.getProductDisplayList[index];
+              return _productTile(context, productItem.name, productItem.price,
+                  productItem.imageURL);
+            },
+            itemCount: appState.getProductCount,
+          ),
+        ),
+      ],
     );
+
   }
 }
 
-Widget _productTile(BuildContext context, String name, String imageURL) {
+Widget _productTile(
+    BuildContext context, String name, double price, String imageURL) {
   return Container(
     padding: const EdgeInsets.all(10),
     margin: const EdgeInsets.only(top: 10.0),
@@ -174,21 +182,38 @@ Widget _productTile(BuildContext context, String name, String imageURL) {
             image: NetworkImage(imageURL),
           ),
           Spacer(),
-          Text(
-            name,
-            style: TextStyle(fontSize: 20.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              Text(
+                name,
+                style: TextStyle(fontSize: 20.0),
+              ),
+              Text(
+                "\$" + price.toString(),
+                style: TextStyle(fontSize: 20.0),
+              ),
+            ],
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: <Widget>[
               IconButton(
-                icon: new Icon(Icons.star_border, color: Colors.red, size: 35,),
+                icon: new Icon(
+                  Icons.star_border,
+                  color: Colors.red,
+                  size: 35,
+                ),
                 onPressed: () {
                   print('favorite tapped!');
                 },
               ),
               IconButton(
-                icon: new Icon(Icons.add_shopping_cart, color: Colors.red, size: 35,),
+                icon: new Icon(
+                  Icons.add_shopping_cart,
+                  color: Colors.red,
+                  size: 35,
+                ),
                 onPressed: () {
                   print('added to cart');
                 },
@@ -201,27 +226,6 @@ Widget _productTile(BuildContext context, String name, String imageURL) {
   );
 }
 
-// class FAB extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     final appState = Provider.of<AppState>(context);
-//     return FloatingActionButton(
-//         child: Icon(Icons.add),
-//         onPressed: () {
-//           appState.setCounter(appState.getCounter + 1);
-//         });
-//   }
-// }
 
-class AppState with ChangeNotifier {
-  AppState();
 
-  List _productDisplayList = [];
 
-  void setProductDisplayList(List list) {
-    _productDisplayList = list;
-    notifyListeners();
-  }
-
-  List get getProductDisplayList => _productDisplayList;
-}
