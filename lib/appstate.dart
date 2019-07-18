@@ -1,22 +1,32 @@
-import 'package:Luma/main.dart';
+
+import 'package:Luma/cart.dart';
+import 'package:Luma/productitem.dart';
 import 'package:flutter/foundation.dart';
 
 class AppState with ChangeNotifier {
-  AppState();
+  
+  List<ProductItem> _productDisplayList = []; // List of products to display
 
-  List<ProductItem> _productDisplayList = [];
+  Cart cart = new Cart();
 
-  void addProductList(ProductItem productItem) {
-    _productDisplayList.add(productItem);
-    notifyListeners();
+  AppState(Cart cart) {
+    if (cart != null) {
+      this.cart = cart;
+    }
   }
+
+  void notifyTheListeners() => notifyListeners();
+
+  void addProductList(ProductItem productItem) => _productDisplayList.add(productItem);    
 
   void clearProductList() {
     _productDisplayList.clear();
-    notifyListeners();
+    notifyTheListeners();
   }
 
   int get getProductCount => _productDisplayList.length;
 
   List<ProductItem> get getProductDisplayList => _productDisplayList;
+  
 }
+

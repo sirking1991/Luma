@@ -2,7 +2,10 @@ import 'dart:convert';
 import 'dart:async';
 import 'dart:core';
 import 'package:Luma/appstate.dart';
+import 'package:Luma/cartpage.dart';
+import 'package:Luma/pageanimations.dart';
 import 'package:Luma/productitem.dart';
+import 'package:Luma/producttile.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -21,7 +24,7 @@ class MyApp extends StatelessWidget {
         ),
         home: ChangeNotifierProvider<AppState>(
           child: MyHomePage(),
-          builder: (_) => AppState(),
+          builder: (_) => AppState(null),
         ));
   }
 }
@@ -38,6 +41,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
     return Scaffold(
       appBar: AppBar(
         leading: Image.asset(
@@ -54,7 +58,10 @@ class _MyHomePageState extends State<MyHomePage> {
           IconButton(
             icon: Icon(Icons.shopping_cart),
             color: Colors.black,
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                  context, SlideRightRoute(page: CartPage(appState.cart)));
+            },
           ),
         ],
       ),
@@ -72,6 +79,18 @@ class MainContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+
+    void promptNoProductFound() {
+      final snackBar = SnackBar(
+        content: Text('No product found'),
+        action: SnackBarAction(
+          label: 'Dismiss',
+          onPressed: () {},
+        ),
+      );
+      Scaffold.of(context).showSnackBar(snackBar);
+      print("No product found!");
+    }
 
     Future<void> fetchPost(String search) async {
       final String url =
@@ -95,31 +114,39 @@ class MainContent extends StatelessWidget {
                       } 
                       ''';
 
-      payLoad = payLoad.replaceAll('\n', '').replaceAll(' ', '').replaceAll('[SEARCH_QUERY]', search);
-      // print('>>>' + payLoad + '<<<');
+      payLoad = payLoad
+          .replaceAll('\n', '')
+          .replaceAll(' ', '')
+          .replaceAll('[SEARCH_QUERY]', search);
+      print('>>>' + payLoad + '<<<');
       Map<String, String> requestHeaders = {'Content-type': 'application/json'};
       final response =
           await http.post(url, headers: requestHeaders, body: payLoad);
 
       if (response.statusCode == 200) {
-        //print(response.body);
+        print(response.body);
         var productList = jsonDecode(response.body);
 
         appState.clearProductList();
 
         if (productList['data']['products'] == null) {
-          print("No product found!");
+          promptNoProductFound();
         } else {
-          for (var i = 0;
-              i < productList['data']['products']['items'].length;
-              i++) {
-            var productItem = productList['data']['products']['items'][i];
-            appState.addProductList(new ProductItem(
-                productItem['sku'],
-                productItem['name'],
-                productItem['image']['url'],
-                productItem['price']['regularPrice']['amount']['value']
-                    .toDouble()));
+          if (productList['data']['products']['items'].length == 0) {
+            promptNoProductFound();
+          } else {
+            for (var i = 0;
+                i < productList['data']['products']['items'].length;
+                i++) {
+              var productItem = productList['data']['products']['items'][i];
+              appState.addProductList(new ProductItem(
+                  productItem['sku'],
+                  productItem['name'],
+                  productItem['image']['url'],
+                  productItem['price']['regularPrice']['amount']['value']
+                      .toDouble()));
+            }
+            appState.notifyTheListeners();
           }
         }
       } else {
@@ -131,101 +158,33 @@ class MainContent extends StatelessWidget {
 
     return Column(
       children: <Widget>[
-        TextField(
-          maxLines: 1,
-          maxLength: 50,
-          textInputAction: TextInputAction.search,
-          onSubmitted: (text) => fetchPost(text),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white,
-            suffixIcon: Icon(Icons.search),
-            hintText: "Search products",
-            counterText: "",
-            border: InputBorder.none,
+        Container(
+          margin: EdgeInsets.only(bottom: 10.0),
+          child: TextField(
+            maxLines: 1,
+            maxLength: 100,
+            textInputAction: TextInputAction.search,
+            onSubmitted: (text) => fetchPost(text),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.white,
+              suffixIcon: Icon(Icons.search),
+              hintText: "Search products",
+              counterText: "",
+              border: InputBorder.none,
+            ),
           ),
         ),
         Expanded(
           child: ListView.builder(
             itemBuilder: (BuildContext context, int index) {
               ProductItem productItem = appState.getProductDisplayList[index];
-              return _productTile(context, productItem.name, productItem.price,
-                  productItem.imageURL);
+              return productTile(context, productItem);
             },
             itemCount: appState.getProductCount,
           ),
         ),
       ],
     );
-
   }
 }
-
-Widget _productTile(
-    BuildContext context, String name, double price, String imageURL) {
-  return Container(
-    padding: const EdgeInsets.all(10),
-    margin: const EdgeInsets.only(top: 10.0),
-    height: 460,
-    width: 400,
-    decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.all(Radius.circular(5.0))),
-    child: ClipRRect(
-      borderRadius: BorderRadius.circular(5.0),
-      child: Column(
-        children: <Widget>[
-          Image(
-            height: 350,
-            fit: BoxFit.contain,
-            alignment: Alignment.topCenter,
-            image: NetworkImage(imageURL),
-          ),
-          Spacer(),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
-              Text(
-                name,
-                style: TextStyle(fontSize: 20.0),
-              ),
-              Text(
-                "\$" + price.toString(),
-                style: TextStyle(fontSize: 20.0),
-              ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
-              IconButton(
-                icon: new Icon(
-                  Icons.star_border,
-                  color: Colors.red,
-                  size: 35,
-                ),
-                onPressed: () {
-                  print('favorite tapped!');
-                },
-              ),
-              IconButton(
-                icon: new Icon(
-                  Icons.add_shopping_cart,
-                  color: Colors.red,
-                  size: 35,
-                ),
-                onPressed: () {
-                  print('added to cart');
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-
-
-
