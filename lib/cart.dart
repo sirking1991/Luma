@@ -32,17 +32,17 @@ class Cart {
     print(cartItems);
   }
 
-  void removeFromCart(ProductItem productItem) {
+  void removeFromCart(ProductItem productItem, {bool clearAll: false}) {
     // search for the item from cartItems, -1 to its qty if found, else do nothing
     int itemIndex = -1;
     for(var i=0; i<cartItems.length; i++) {
       if (cartItems[i].productItem.sku==productItem.sku) {
-        cartItems[i].qty--;
-        itemIndex = i;
+          cartItems[i].qty--;
+          itemIndex = i;
         break;
       }
     }
-    if (itemIndex >= 0 && cartItems[itemIndex].qty<=0) {
+    if ((itemIndex >= 0 && cartItems[itemIndex].qty<=0) || clearAll) {
       cartItems.removeAt(itemIndex);
     }
     print(cartItems);
@@ -57,7 +57,7 @@ class Cart {
   }
 
   void clearCart() {
-    cartItems = [];
+    cartItems.clear();
   }
 
   List<CartItem> get getCartItems => cartItems;
