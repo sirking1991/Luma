@@ -60,6 +60,7 @@ Widget productTile(
                 onPressed: () {
                   final appState = Provider.of<AppState>(context);
                   appState.cart.addToCart(productItem);
+                  appState.notifyTheListeners();
                   print('added to cart');
                 },
               ),

@@ -83,13 +83,19 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Colors.white,
         /* Color(0xfff37b1f), */
         actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.shopping_cart),
-            color: Colors.black,
-            onPressed: () {
-              Navigator.push(
-                  context, SlideRightRoute(page: CartPage(appState.cart)));
-            },
+          Stack(
+            alignment: AlignmentDirectional.centerStart,
+            children: <Widget>[
+              IconButton(
+                icon: Icon(Icons.shopping_cart),
+                color: Colors.black,
+                onPressed: () {
+                  Navigator.push(
+                      context, SlideRightRoute(page: CartPage(appState.cart)));
+                },
+              ),
+              cartQtyBadge(context),
+            ],
           ),
         ],
       ),
@@ -101,6 +107,23 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
+}
+
+Widget cartQtyBadge(BuildContext context) {
+  final appState = Provider.of<AppState>(context);
+
+  if (0 == appState.cart.getCartItemCount().round()) return Container();
+
+  return Positioned(
+    top: 0, right: 15,
+    child: Container(
+      child: Text(
+        appState.cart.getCartItemCount().round().toString(),
+        style: TextStyle(
+            color: Colors.red, fontWeight: FontWeight.bold, fontSize: 20),
+      ),
+    ),
+  );
 }
 
 class MainContent extends StatelessWidget {

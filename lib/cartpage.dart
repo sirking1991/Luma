@@ -35,39 +35,14 @@ class MyCartPage extends StatefulWidget {
 }
 
 class _MyCartPageState extends State<MyCartPage> {
-  void _confirmCartClear() {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          final appState = Provider.of<AppState>(context);
-          return AlertDialog(
-            title: Text("Clear shopping cart"),
-            content: Text(
-                "This will permanently remove items from your shopping cart. \n Do you wish to continue?"),
-            actions: <Widget>[
-              RaisedButton(
-                child:
-                    Text("Cancel", style: TextStyle(color: Colors.lightGreen)),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-              RaisedButton(
-                child: Text("Proceed", style: TextStyle(color: Colors.red)),
-                onPressed: () {
-                  appState.cart.clearCart();
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        });
-  }
 
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
 
-    return Scaffold(
+    return Scaffold(      
       appBar: AppBar(
+        leading: IconButton(icon: Icon(Icons.arrow_back), onPressed: ()=>Navigator.pop(context),),
         title: Text("Shopping cart"),
         actions: <Widget>[
           IconButton(
