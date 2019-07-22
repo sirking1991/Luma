@@ -173,7 +173,10 @@ Widget productCartTile(BuildContext context, CartItem cartItem) {
                 Padding(
                   padding: EdgeInsets.only(left: 10),
                 ),
-                Text("\$"+(cartItem.qty * cartItem.productItem.price).toString(),style: TextStyle(fontSize: 35)),
+                Text(
+                    "\$" +
+                        (cartItem.qty * cartItem.productItem.price).toString(),
+                    style: TextStyle(fontSize: 35)),
               ],
             )
           ],
