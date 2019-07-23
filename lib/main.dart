@@ -115,7 +115,8 @@ Widget cartQtyBadge(BuildContext context) {
   if (0 == appState.cart.getCartItemCount().round()) return Container();
 
   return Positioned(
-    top: 0, right: 15,
+    top: 0,
+    right: 15,
     child: Container(
       child: Text(
         appState.cart.getCartItemCount().round().toString(),
@@ -144,6 +145,7 @@ class MainContent extends StatelessWidget {
     }
 
     Future<void> fetchPost(String search) async {
+      //final String url ='https://m23ee-mag2-demo.datasolution-aspac.site/graphql';
       final String url =
           'https://2-3-2-3g456uy-7t6qpzagrbri4.us-4.magentosite.cloud/graphql';
       String payLoad = '''
@@ -158,7 +160,18 @@ class MainContent extends StatelessWidget {
                               stock_status,
                               price {
                                 regularPrice {amount {currency,value}}
-                              }
+                              },
+                              ...[SPACE]on[SPACE]ConfigurableProduct {
+                                configurable_options {
+                                  id,
+                                  label,
+                                  position,
+                                  values {
+                                    value: value_index,
+                                    label,
+                                  }
+                                }
+                              }                              
                             }
                           }
                         }"
@@ -168,7 +181,8 @@ class MainContent extends StatelessWidget {
       payLoad = payLoad
           .replaceAll('\n', '')
           .replaceAll(' ', '')
-          .replaceAll('[SEARCH_QUERY]', search);
+          .replaceAll('[SEARCH_QUERY]', search)
+          .replaceAll('[SPACE]', ' ');
       print('>>>' + payLoad + '<<<');
       Map<String, String> requestHeaders = {'Content-type': 'application/json'};
       final response =
@@ -190,12 +204,40 @@ class MainContent extends StatelessWidget {
                 i < productList['data']['products']['items'].length;
                 i++) {
               var productItem = productList['data']['products']['items'][i];
+
+              List<ProductOption> productOptions = [];
+
+              if (productItem['configurable_options'] != null) {
+                for (var i2 = 0;
+                    i2 < productItem['configurable_options'].length;
+                    i2++) {
+                  ProductOption tmpProductOptions = new ProductOption(
+                      productItem['configurable_options'][i2]['id'],
+                      productItem['configurable_options'][i2]['label'],
+                      productItem['configurable_options'][i2]['position'], []);
+                  for (var i3 = 0;
+                      i3 <
+                          productItem['configurable_options'][i2]['values']
+                              .length;
+                      i3++) {
+                    tmpProductOptions.values.add(new OptionValue(
+                      productItem['configurable_options'][i2]['values'][i3]
+                          ['label'],
+                      productItem['configurable_options'][i2]['values'][i3]
+                          ['value'],
+                    ));
+                  }
+                  productOptions.add(tmpProductOptions);
+                }
+              }
+
               appState.addProductList(new ProductItem(
                   productItem['sku'],
                   productItem['name'],
                   productItem['image']['url'],
                   productItem['price']['regularPrice']['amount']['value']
-                      .toDouble()));
+                      .toDouble(),
+                  productOptions));
             }
             appState.notifyTheListeners();
           }
@@ -203,6 +245,8 @@ class MainContent extends StatelessWidget {
       } else {
         // If that response was not OK, throw an error.
         //throw Exception('Failed to load post');
+        Scaffold.of(context).showSnackBar(SnackBar(
+            content: Text("Could not connect to network. Try again later.")));
         print(response.body);
       }
     }

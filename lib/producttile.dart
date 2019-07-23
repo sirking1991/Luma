@@ -34,6 +34,7 @@ Widget productTile(
               ),
             ],
           ),
+          productItem.productOptions.length != 0 ? productOptions(context, productItem.productOptions) : Container(),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: <Widget>[
@@ -70,4 +71,8 @@ Widget productTile(
       ),
     ),
   );
+}
+
+Widget productOptions(BuildContext context, List<ProductOption> productItems) {
+
 }

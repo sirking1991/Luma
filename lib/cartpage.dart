@@ -35,14 +35,18 @@ class MyCartPage extends StatefulWidget {
 }
 
 class _MyCartPageState extends State<MyCartPage> {
-
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
 
-    return Scaffold(      
+    return Scaffold(
       appBar: AppBar(
-        leading: IconButton(icon: Icon(Icons.arrow_back), onPressed: ()=>Navigator.pop(context),),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
         title: Text("Shopping cart"),
         actions: <Widget>[
           IconButton(
@@ -69,7 +73,20 @@ class _MyCartPageState extends State<MyCartPage> {
               child: ListView.builder(
                 itemBuilder: (BuildContext context, int index) {
                   CartItem cartItem = appState.cart.cartItems[index];
-                  return productCartTile(context, cartItem);
+                  return Dismissible(
+                    key: Key(cartItem.productItem.sku),
+                    direction: DismissDirection.endToStart,
+                    onDismissed: (direction) {
+                      setState(() {
+                        appState.cart.removeFromCart(cartItem.productItem,
+                            clearAll: true);
+                        appState.notifyTheListeners();
+                      });
+                      Scaffold.of(context).showSnackBar(
+                          SnackBar(content: Text("Item removed")));
+                    },
+                    child: productCartTile(context, cartItem),
+                  );
                 },
                 itemCount: appState.cart.getCartItems.length,
               ),
